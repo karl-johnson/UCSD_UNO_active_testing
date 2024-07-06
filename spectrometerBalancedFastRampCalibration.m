@@ -17,10 +17,11 @@ R2_meas = kes_measure_resistance(kes, 2);
 fprintf("Channel 1 R = %1.1f ohms, Channel 2 R = %1.1f ohms \r\n", R1_meas, R2_meas);
 %% Choose sweep params and send to equipment
 % optical settings
-lambda_array_nm = [1520 1540 1560 1580 1600 1620];
+%lambda_array_nm = [1520 1540 1560 1580 1600 1620];
+lambda_array_nm = [1620:-20:1520];
 detector_range = -50; % power meter range, dBm
 sampling_interval = 5e-4; % how often to sample optically, seconds.
-start_warmup_time = 10;
+start_warmup_time = 5;
 % electrical settings
 compliance_current = 70e-3; % A
 compliance_voltage = 70; % V
@@ -101,6 +102,7 @@ kes_output(kes, true);
 fprintf("Pausing for %d seconds to warm-up...", start_warmup_time);
 pause(start_warmup_time);
 for lambda_index = 1:num_lambda
+    kes_output(kes, true);
     clear channel1 lambda
     this_lambda_nm = lambda_array_nm(lambda_index);
     venturi_set_wavelength(ven, this_lambda_nm);
@@ -111,7 +113,7 @@ for lambda_index = 1:num_lambda
     kes_trig_sweep(kes);
     loggingSuccessful = agilent_wait_for_logging(agi, max_wait_time);
     % turn off outputs
-    %kes_output(kes, false);
+    kes_output(kes, false);
     % get result
     if(loggingSuccessful)
         [channel1, channel2] = agilent_get_logging_result(agi);
@@ -124,7 +126,9 @@ for lambda_index = 1:num_lambda
         'time_array', 'channel1', 'channel2', 'heater_R', ...
         'P_range', 'P_tot', 'P_num', 'supply_interval', 'lambda');
     %close(f);
+    pause(5);
 end
+kes_output(kes, false);
 %% Plot result
 figure; hold on;
 plot(time_array, 10*log10(abs(channel1)) + 30, 'r-');
